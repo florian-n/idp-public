@@ -1,0 +1,48 @@
+units real
+atom_style full
+region box block 0 27.96 0 27.96 0 27.96
+create_box 2 box bond/types 1 angle/types 1 &
+            extra/bond/per/atom 2 extra/angle/per/atom 1 extra/special/per/atom 2
+
+mass 1 15.9994
+mass 2 1.008
+
+#pair_style lj/cut/coul/cut 8.0
+pair_style lj/charmm/coul/long 8.0 10.0
+kspace_style ewald 1.0e-4
+pair_coeff 1 1 0.1020 3.188
+pair_coeff 2 2 0.0    1.0
+
+bond_style zero
+bond_coeff 1 0.9574
+
+angle_style zero
+angle_coeff 1 104.52
+
+molecule water ./lammps/tip3p.mol
+create_atoms 0 random 729 34564 NULL mol water 25367 overlap 1.33
+
+fix rigid all shake 0.001 10 10000 b 1 a 1
+minimize 0.0 0.0 1000 10000
+
+reset_timestep 0
+timestep 2.0
+velocity all create 296.0 5463576
+fix integrate all nvt temp 296 296 100.0
+
+thermo_style custom step temp press etotal pe
+
+group oxygen type 1
+group hydrogen type 2
+
+# compute myRDF all rdf 250 1 1 cutoff 10
+# fix 2 all ave/time 100 100 10000 c_myRDF[*] file rdf.txt mode vector
+
+
+thermo 1000
+run 5000
+dump dcd_dump all dcd 100 ./data/lammps/output.dcd
+write_data ./lammps/output/tip3p.data nocoeff
+run 20000
+
+

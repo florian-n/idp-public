@@ -1,0 +1,8 @@
+jax
+jaxlib
+jax-md
+matplotlib
+ipykernel
+matplotlib
+mdanalysis
+pandas

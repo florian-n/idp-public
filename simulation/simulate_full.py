@@ -1,7 +1,6 @@
 import os
 
 from helpers.debye_helper import (
-    calculate_distance_matrix,
     calculate_scattering_length_matrix,
 )
 
@@ -13,29 +12,19 @@ import jax.numpy as jnp
 import numpy as np
 
 # import numpy as np
-from jax_md import space, simulate, rigid_body, util, energy, minimize, units
+from jax_md import space, simulate, rigid_body, util, energy, units
 
-from helpers.better_debye import get_averaged_debye, debye
+from helpers.better_debye import get_averaged_debye
 
-from helpers.converters import shrink_scale_box_size, get_density
+from helpers.converters import get_box_length_from_density
 from helpers.grid import get_points_on_grid
-
+from helpers.slicing import get_slices
 
 jax.config.update("jax_enable_x64", True)
 
 from helpers.bridge import MDABridge
 
 import matplotlib.pyplot as plt
-
-
-def get_slices(all_positions: jnp.array, start, n_samples):
-
-    step_size = (len(all_positions) - start) // n_samples
-    selected_states = jnp.array(
-        all_positions[start : start + step_size * n_samples : step_size]
-    )
-
-    return selected_states
 
 
 def run_entire_simulation(
@@ -52,8 +41,6 @@ def run_entire_simulation(
     N_MOLECULES_Y = N_MOLECULES_PER_AXIS
     N_MOLECULES_Z = N_MOLECULES_PER_AXIS
     N_MOLECULES = N_MOLECULES_X * N_MOLECULES_Y * N_MOLECULES_Z
-    N_PARTICLES = N_MOLECULES * 3
-    NUM_EM_STEPS = 500
 
     # Source: https://docs.lammps.org/Howto_tip3p.html
     O_MASS = 15.9994
@@ -75,11 +62,8 @@ def run_entire_simulation(
 
     H_SCATTERING_LENGTH = -3.7390
     O_SCATTERING_LENGTH = 5.803
-    D_SCATTERING_LENGTH = 6.671
 
-    BOX_SIZE = shrink_scale_box_size(62.086, 8000, N_MOLECULES)  # 46.610
-
-    # density = get_density(N_MOLECULES * 3, BOX_SIZE)
+    BOX_SIZE = get_box_length_from_density(N_MOLECULES * 3, 0.1)
 
     displacement, shift = space.periodic(BOX_SIZE)
 
@@ -138,14 +122,10 @@ def run_entire_simulation(
         @jax.jit
         def step(state, t):
             real_positions, _ = rigid_body.union_to_points(state.position, shape)
-            temperature = rigid_body.temperature(
-                state.position, state.momentum, state.mass
-            )
-            velocities = state.momentum.center / state.mass.center
 
             return (
                 step_fn(state),
-                (real_positions, temperature, velocities),
+                real_positions,
             )
 
         steps = jnp.arange(num_steps)
@@ -155,34 +135,11 @@ def run_entire_simulation(
 
     TIMESTEP = 2 * unit["time"]
     NUM_STEPS = N_STEPS
-    temp_eq_state_3, temp_eq_state_3_result = run_simulation(
+    _, atom_positions = run_simulation(
         key, full_configuration, NUM_STEPS, TIMESTEP, TIMESTEP * 100
     )
 
-    atom_positions, temperatures, velocities = temp_eq_state_3_result
-
-    # plt.plot(temperatures / float(unit["temperature"]))
-    # plt.show()
-
-    def get_slices(all_positions: jnp.array, start, n_samples, timestep):
-        indices = np.array(
-            np.floor(np.linspace(start, len(all_positions) - 1, n_samples)),
-            dtype=int,
-        )
-        selected_states = jnp.array(all_positions[indices])
-        timesteps = indices * (timestep / unit["time"])
-        return selected_states, timesteps
-
-    real_velocities = np.repeat(velocities, 3, axis=1)
-    frame_r, frame_times = get_slices(atom_positions, 3000, N_SLICES, TIMESTEP)
-    frame_v, _ = get_slices(real_velocities, 3000, 10, TIMESTEP)
-
-    # bridge = MDABridge(
-    #     np.array(frame_r), np.array(frame_v), frame_times, BOX_SIZE, masses
-    # )
-
-    # bridge.dump("./output/test_lts")
-    # bridge.write_lammps("./output/lammps.data", 99)
+    frame_r, _ = get_slices(atom_positions, 3000, N_SLICES, TIMESTEP / unit["time"])
 
     qs = jnp.linspace(2.0 * jnp.pi / BOX_SIZE, 30, N_Q)
 

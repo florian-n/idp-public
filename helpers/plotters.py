@@ -1,7 +1,11 @@
 import matplotlib.pyplot as plt
 
 
-def plot_3d_system(system, n_molecules_per_axis, BOX_SIZE):
+def plot_3d_system(system, n_molecules_per_axis):
+    """
+    3D plot a frame.
+    """
+
     x = [point[0] for point in system]
     y = [point[1] for point in system]
     z = [point[2] for point in system]

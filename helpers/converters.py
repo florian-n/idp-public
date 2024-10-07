@@ -12,4 +12,7 @@ def get_density(n_atoms, box_size):
 
 
 def get_box_length_from_density(n_atoms, density):
+    """
+    Calculate the length of one side of a cubic box from the number of atoms and the target density.
+    """
     return np.cbrt(n_atoms / density)

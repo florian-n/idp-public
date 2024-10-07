@@ -1,7 +1,12 @@
 import MDAnalysis as mda
 import numpy as np
+import sys
 
-universe = mda.Universe("./lammps/output/tip3p.data", "./data/lammps/output.dcd")
+data_file = sys.argv[1]
+dcd_file = sys.argv[2]
+output_directory = sys.argv[3]
+
+universe = mda.Universe(data_file, dcd_file)
 atoms = universe.select_atoms("all")
 
 n_residues = len(universe.atoms) // 3
@@ -14,10 +19,10 @@ universe.add_TopologyAttr("name", ["O", "H1", "H2"] * n_residues)
 universe.add_TopologyAttr("type", ["O", "H", "H"] * n_residues)
 universe.add_TopologyAttr("resnames", ["SOL"] * n_residues)
 
-with mda.Writer("./data/lammps/output.pdb", atoms.n_atoms) as w:
+with mda.Writer(f"{output_directory}/output.pdb", atoms.n_atoms) as w:
     w.write(universe.atoms)
 
 
-with mda.Writer("./data/lammps/trajectory.pdb", atoms.n_atoms) as pdb_writer:
+with mda.Writer(f"{output_directory}/trajectory.pdb", atoms.n_atoms) as pdb_writer:
     for _ in universe.trajectory:
         pdb_writer.write(atoms)

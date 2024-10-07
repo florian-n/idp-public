@@ -13,27 +13,13 @@ import jax.numpy as jnp
 import numpy as np
 
 # import numpy as np
-from jax_md import space, simulate, rigid_body, util, energy, minimize, units
+from jax_md import space, simulate, rigid_body, util, energy, units
 
-from helpers.better_debye import get_averaged_debye, debye
 
-from helpers.converters import shrink_scale_box_size, get_density
+from helpers.converters import shrink_scale_box_size
 from helpers.grid import get_points_on_grid
 
-
 jax.config.update("jax_enable_x64", True)
-
-import matplotlib.pyplot as plt
-
-
-def get_slices(all_positions: jnp.array, start, n_samples):
-
-    step_size = (len(all_positions) - start) // n_samples
-    selected_states = jnp.array(
-        all_positions[start : start + step_size * n_samples : step_size]
-    )
-
-    return selected_states
 
 
 def run_simulation(LJ_SIGMA_OO, N_STEPS, N_MOLECULES_PER_AXIS, N_SLICES, N_Q, init_key):

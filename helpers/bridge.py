@@ -8,6 +8,9 @@ H_SCATTERING_LENGTH = -3.7390
 O_SCATTERING_LENGTH = 5.803
 
 
+"""
+(Originally intended as) Bridge between the MDAnalysis and JAX-MD libraries.
+"""
 class MDABridge:
     def __init__(
         self,

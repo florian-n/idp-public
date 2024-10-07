@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 
 
 def run_entire_simulation(
-    LJ_SIGMA_OO, N_STEPS, N_MOLECULES_PER_AXIS, N_SLICES, N_Q, init_key
+    LJ_SIGMA_OO, N_STEPS, N_MOLECULES_PER_AXIS, N_SLICES, N_Q, init_key, taut=100
 ):
     # N_STEPS = 3000
     # N_MOLECULES_PER_AXIS = 5
@@ -136,7 +136,7 @@ def run_entire_simulation(
     TIMESTEP = 2 * unit["time"]
     NUM_STEPS = N_STEPS
     _, atom_positions = run_simulation(
-        key, full_configuration, NUM_STEPS, TIMESTEP, TIMESTEP * 100
+        key, full_configuration, NUM_STEPS, TIMESTEP, TIMESTEP * taut
     )
 
     frame_r, _ = get_slices(atom_positions, 3000, N_SLICES, TIMESTEP / unit["time"])

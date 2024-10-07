@@ -47,6 +47,9 @@ def save_results(keys, values):
     """
 
     assert FILENAME is not None, "Filename must be set before saving results."
+    assert keys is not None, "Keys must not be None."
+    assert values is not None, "Values must not be None."
+
     np.savez(FILENAME, keys=keys, values=values)
 
 
@@ -55,6 +58,7 @@ def save_intermediate_result(key: int, values: np.array):
     Save teh intermediate result to the database.
     """
 
+    # TODO: Check if key already exists in the database, if so, delete old first
     assert FILENAME is not None, "Filename must be set before saving results."
 
     previous_keys, previous_values = load_result()

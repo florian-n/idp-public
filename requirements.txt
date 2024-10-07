@@ -6,3 +6,4 @@ ipykernel
 matplotlib
 mdanalysis
 pandas
+scipy

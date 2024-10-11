@@ -22,10 +22,6 @@ from helpers.slicing import get_slices
 
 jax.config.update("jax_enable_x64", True)
 
-from helpers.bridge import MDABridge
-
-import matplotlib.pyplot as plt
-
 
 def run_entire_simulation(
     LJ_SIGMA_OO, N_STEPS, N_MOLECULES_PER_AXIS, N_SLICES, N_Q, init_key, taut=100

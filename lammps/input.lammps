@@ -39,9 +39,9 @@ group hydrogen type 2
 # compute myRDF all rdf 250 1 1 cutoff 10
 # fix 2 all ave/time 100 100 10000 c_myRDF[*] file rdf.txt mode vector
 
-compute cc1 all chunk/atom molecule
-compute myChunk all msd/chunk cc1
-fix 1 all ave/time 100 100 10000 c_myChunk[*] file tmp.out mode vector
+# compute cc1 all chunk/atom molecule
+# compute myChunk all msd/chunk cc1
+# fix 1 all ave/time 100 100 10000 c_myChunk[*] file tmp.out mode vector
 
 thermo 1000
 run 5000

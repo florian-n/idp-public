@@ -1,32 +1,25 @@
 import os
+from typing import TypeVar, Callable
 
-from helpers.debye_helper import (
-    calculate_distance_matrix,
-    calculate_scattering_length_matrix,
-)
+from helpers.slicing import get_slices
 
-os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = ".80"
+os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = ".85"
 
+from helpers.converters import get_box_length_from_density
 import jax
 from jax import random, lax
 import jax.numpy as jnp
 import numpy as np
 
-# import numpy as np
 from jax_md import space, simulate, rigid_body, util, energy, units
 
 
-from helpers.converters import shrink_scale_box_size
 from helpers.grid import get_points_on_grid
 
 jax.config.update("jax_enable_x64", True)
 
 
-def run_simulation(LJ_SIGMA_OO, N_STEPS, N_MOLECULES_PER_AXIS, N_SLICES, N_Q, init_key):
-    # N_STEPS = 3000
-    # N_MOLECULES_PER_AXIS = 5
-    # init_key = 345346
-
+def run_simulation(LJ_SIGMA_OO, N_STEPS, N_MOLECULES_PER_AXIS, N_SLICES, init_key):
     unit = units.real_unit_system()
     kT = 296 * unit["temperature"]
 
@@ -34,8 +27,6 @@ def run_simulation(LJ_SIGMA_OO, N_STEPS, N_MOLECULES_PER_AXIS, N_SLICES, N_Q, in
     N_MOLECULES_Y = N_MOLECULES_PER_AXIS
     N_MOLECULES_Z = N_MOLECULES_PER_AXIS
     N_MOLECULES = N_MOLECULES_X * N_MOLECULES_Y * N_MOLECULES_Z
-    N_PARTICLES = N_MOLECULES * 3
-    NUM_EM_STEPS = 500
 
     # Source: https://docs.lammps.org/Howto_tip3p.html
     O_MASS = 15.9994
@@ -55,15 +46,10 @@ def run_simulation(LJ_SIGMA_OO, N_STEPS, N_MOLECULES_PER_AXIS, N_SLICES, N_Q, in
     positions = jnp.array([O_POS, H1_POS, H2_POS])
     charges = jnp.array([O_CHARGE, H_CHARGE, H_CHARGE])
 
-    H_SCATTERING_LENGTH = -3.7390
-    O_SCATTERING_LENGTH = 5.803
-    D_SCATTERING_LENGTH = 6.671
-
-    BOX_SIZE = shrink_scale_box_size(62.086, 8000, N_MOLECULES)  # 46.610
-
-    # density = get_density(N_MOLECULES * 3, BOX_SIZE)
+    BOX_SIZE = get_box_length_from_density(N_MOLECULES * 3, 0.1)
 
     displacement, shift = space.periodic(BOX_SIZE)
+    _, unwrapped_shift = space.periodic(BOX_SIZE)
 
     key = random.PRNGKey(init_key)
     key, mol_ori_key = random.split(key, 2)
@@ -120,14 +106,10 @@ def run_simulation(LJ_SIGMA_OO, N_STEPS, N_MOLECULES_PER_AXIS, N_SLICES, N_Q, in
         @jax.jit
         def step(state, t):
             real_positions, _ = rigid_body.union_to_points(state.position, shape)
-            temperature = rigid_body.temperature(
-                state.position, state.momentum, state.mass
-            )
-            velocities = state.momentum.center / state.mass.center
 
             return (
-                step_fn(state),
-                (real_positions, temperature, velocities),
+                step_fn(state, unwrapped_shift_fn=unwrapped_shift),
+                (real_positions),
             )
 
         steps = jnp.arange(num_steps)
@@ -141,17 +123,10 @@ def run_simulation(LJ_SIGMA_OO, N_STEPS, N_MOLECULES_PER_AXIS, N_SLICES, N_Q, in
         key, full_configuration, NUM_STEPS, TIMESTEP, TIMESTEP * 100
     )
 
-    atom_positions, _, _ = simulation_result
+    atom_positions = simulation_result
 
-    def get_slices(all_positions: jnp.array, start, n_samples, timestep):
-        indices = np.array(
-            np.floor(np.linspace(start, len(all_positions) - 1, n_samples)),
-            dtype=int,
-        )
-        selected_states = jnp.array(all_positions[indices])
-        timesteps = indices * (timestep / unit["time"])
-        return selected_states, timesteps
+    frame_r, dt_per_snapshot = get_slices(
+        atom_positions, 3000, N_SLICES, TIMESTEP / unit["time"]
+    )
 
-    frame_r, frame_times = get_slices(atom_positions, 3000, N_SLICES, TIMESTEP)
-
-    return frame_r, frame_times
+    return np.array(frame_r), dt_per_snapshot

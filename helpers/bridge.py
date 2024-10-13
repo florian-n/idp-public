@@ -1,5 +1,6 @@
 import numpy as np
 import MDAnalysis as mda
+from MDAnalysis.coordinates.memory import MemoryReader
 
 from helpers.better_debye import get_averaged_debye
 from helpers.debye_helper import calculate_scattering_length_matrix
@@ -11,11 +12,13 @@ O_SCATTERING_LENGTH = 5.803
 """
 (Originally intended as) Bridge between the MDAnalysis and JAX-MD libraries.
 """
+
+
 class MDABridge:
     def __init__(
         self,
         trajectory: np.ndarray,
-        timestamps: np.array,
+        dt_per_frame: np.array,
         box_size: int,
         masses: np.array,
     ):
@@ -25,7 +28,7 @@ class MDABridge:
         self.box_size = box_size
         self.masses = masses
 
-        self.timestamps = timestamps
+        self.dt_per_frame = dt_per_frame
 
         self.universe = self._create_mda_universe()
 
@@ -33,7 +36,7 @@ class MDABridge:
         data = np.load(filename, allow_pickle=True)
         return MDABridge(
             trajectory=data["trajectory"],
-            timestamps=data["timestamps"],
+            dt_per_frame=data["dt_per_frame"],
             box_size=data["box_size"],
             masses=data["masses"],
         )
@@ -72,8 +75,9 @@ class MDABridge:
 
         universe.load_new(
             self.trajectory,
+            format=MemoryReader,
             dimensions=[self.box_size, self.box_size, self.box_size, 90, 90, 90],
-            time=self.timestamps / 1000,
+            dt=self.dt_per_frame / 1000,
         )
 
         return universe
@@ -82,8 +86,7 @@ class MDABridge:
         np.savez(
             file=filename,
             trajectory=self.trajectory,
-            velocities=self.velocities,
-            timestamps=self.timestamps,
+            dt_per_frame=self.dt_per_frame,
             box_size=self.box_size,
             masses=self.masses,
         )
@@ -104,7 +107,7 @@ class MDABridge:
             if all_frames:
                 for _ in self.universe.trajectory:
                     pdb_writer.write(atoms)
-            else:                
+            else:
                 self.universe.trajectory[0]
                 pdb_writer.write(atoms)
 

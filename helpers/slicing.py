@@ -11,5 +11,8 @@ def get_slices(all_positions: jnp.array, start, n_samples, normalized_timestep):
         dtype=int,
     )
     selected_states = jnp.array(all_positions[indices])
-    timesteps = indices * normalized_timestep
-    return selected_states, timesteps
+
+    n_frames_after_start = len(all_positions) - start
+    dt_per_selected_state = normalized_timestep * n_frames_after_start / n_samples
+
+    return selected_states, dt_per_selected_state

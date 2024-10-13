@@ -26,6 +26,10 @@ Install GPU JAX using
 pip install -U "jax[cuda12]"
 ```
 
+# First steps
+
+Look at the notebook [notebooks/run_simulation.ipynb](notebooks/run_simulation.ipynb). It provides a basic guide as to how simulations are executed.
+
 # Sources
 
 - TIP3P model parameters: [TIP3P water model](https://docs.lammps.org/Howto_tip3p.html)

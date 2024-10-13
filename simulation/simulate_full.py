@@ -26,10 +26,6 @@ jax.config.update("jax_enable_x64", True)
 def run_entire_simulation(
     LJ_SIGMA_OO, N_STEPS, N_MOLECULES_PER_AXIS, N_SLICES, N_Q, init_key, taut=100
 ):
-    # N_STEPS = 3000
-    # N_MOLECULES_PER_AXIS = 5
-    # init_key = 345346
-
     unit = units.real_unit_system()
     kT = 296 * unit["temperature"]
 

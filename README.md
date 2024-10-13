@@ -28,7 +28,7 @@ pip install -U "jax[cuda12]"
 
 # First steps
 
-Look at the notebook [notebooks/run_simulation.ipynb](notebooks/run_simulation.ipynb). It provides a basic guide as to how simulations are executed.
+Consider the notebook [notebooks/run_simulation.ipynb](notebooks/run_simulation.ipynb). It provides a basic guide as to how simulations are executed.
 
 # Sources
 
